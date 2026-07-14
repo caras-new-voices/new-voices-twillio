@@ -96,6 +96,48 @@ body {
   border-color: transparent;
 }
 
+.field-label {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 8px;
+  letter-spacing: 0.3px;
+}
+
+.select {
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%2394a3b8' d='M1 1l5 5 5-5'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  padding-right: 40px;
+  font-size: 16px;
+  letter-spacing: 0;
+  text-align: left;
+}
+
+.callee {
+  text-align: center;
+  padding: 14px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  margin-bottom: 16px;
+}
+
+.callee strong {
+  display: block;
+  font-size: 18px;
+}
+
+.callee span {
+  display: block;
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
 .keypad {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

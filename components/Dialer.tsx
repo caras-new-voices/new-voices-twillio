@@ -5,25 +5,26 @@ import { Call, Device } from "@twilio/voice-sdk";
 
 type Phase = "loading" | "ready" | "connecting" | "on-call" | "incoming" | "error";
 
-const KEYS = [
-  { d: "1", s: "" },
-  { d: "2", s: "ABC" },
-  { d: "3", s: "DEF" },
-  { d: "4", s: "GHI" },
-  { d: "5", s: "JKL" },
-  { d: "6", s: "MNO" },
-  { d: "7", s: "PQRS" },
-  { d: "8", s: "TUV" },
-  { d: "9", s: "WXYZ" },
-  { d: "*", s: "" },
-  { d: "0", s: "+" },
-  { d: "#", s: "" },
+type Contact = { label: string; number: string };
+
+// Numbers available to call. Add more entries here as they come online.
+const CONTACTS: Contact[] = [
+  { label: "Inter Miami demo", number: "+17542199670" },
 ];
+
+// Digits usable for DTMF once a call is connected (e.g. IVR menus).
+const DTMF_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "*", "0", "#"];
+
+function formatNumber(e164: string): string {
+  const m = e164.match(/^\+1(\d{3})(\d{3})(\d{4})$/);
+  if (m) return `+1 (${m[1]}) ${m[2]}-${m[3]}`;
+  return e164;
+}
 
 export default function Dialer() {
   const [phase, setPhase] = useState<Phase>("loading");
   const [statusText, setStatusText] = useState("Initializing…");
-  const [number, setNumber] = useState("");
+  const [selected, setSelected] = useState(CONTACTS[0]?.number ?? "");
   const [incomingFrom, setIncomingFrom] = useState("");
 
   const deviceRef = useRef<Device | null>(null);
@@ -123,17 +124,17 @@ export default function Dialer() {
 
   const startCall = useCallback(async () => {
     const device = deviceRef.current;
-    if (!device || !number.trim()) return;
+    if (!device || !selected) return;
     setPhase("connecting");
     setStatusText("Connecting…");
     try {
-      const call = await device.connect({ params: { To: number.trim() } });
+      const call = await device.connect({ params: { To: selected } });
       wireActiveCall(call);
     } catch (err) {
       setPhase("error");
       setStatusText(err instanceof Error ? err.message : "Could not place call");
     }
-  }, [number, wireActiveCall]);
+  }, [selected, wireActiveCall]);
 
   const hangup = useCallback(() => {
     deviceRef.current?.disconnectAll();
@@ -154,15 +155,6 @@ export default function Dialer() {
     resetToReady();
   }, [resetToReady]);
 
-  const press = (d: string) => {
-    if (phase === "on-call") {
-      // Send DTMF tones during an active call.
-      callRef.current?.sendDigits(d);
-      return;
-    }
-    setNumber((n) => n + d);
-  };
-
   const statusClass =
     phase === "ready"
       ? "ready"
@@ -173,6 +165,7 @@ export default function Dialer() {
           : "";
 
   const busy = phase === "on-call" || phase === "connecting";
+  const selectedContact = CONTACTS.find((c) => c.number === selected);
 
   return (
     <div className="dialer">
@@ -200,59 +193,73 @@ export default function Dialer() {
         </div>
       )}
 
-      <input
-        className="display"
-        value={number}
-        onChange={(e) => setNumber(e.target.value)}
-        placeholder="+1 555 123 4567"
-        inputMode="tel"
-        aria-label="Destination number"
-      />
+      {busy ? (
+        <>
+          <div className="callee">
+            {selectedContact ? (
+              <>
+                <strong>{selectedContact.label}</strong>
+                <span>{formatNumber(selectedContact.number)}</span>
+              </>
+            ) : (
+              <strong>{formatNumber(selected)}</strong>
+            )}
+          </div>
 
-      <div className="keypad">
-        {KEYS.map((k) => (
-          <button
-            key={k.d}
-            className="key"
-            onClick={() => press(k.d)}
-            aria-label={`Key ${k.d}`}
-          >
-            {k.d}
-            {k.s && <small>{k.s}</small>}
-          </button>
-        ))}
-      </div>
+          <div className="keypad">
+            {DTMF_KEYS.map((d) => (
+              <button
+                key={d}
+                className="key"
+                onClick={() => callRef.current?.sendDigits(d)}
+                aria-label={`Send tone ${d}`}
+                disabled={phase !== "on-call"}
+              >
+                {d}
+              </button>
+            ))}
+          </div>
 
-      <div className="actions">
-        {busy ? (
-          <button className="btn btn-hangup" onClick={hangup}>
-            Hang up
-          </button>
-        ) : (
-          <>
-            <button
-              className="btn btn-secondary"
-              onClick={() => setNumber((n) => n.slice(0, -1))}
-              disabled={!number}
-              aria-label="Delete last digit"
-            >
-              ⌫
+          <div className="actions">
+            <button className="btn btn-hangup" onClick={hangup}>
+              Hang up
             </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <label className="field-label" htmlFor="contact">
+            Number to call
+          </label>
+          <select
+            id="contact"
+            className="display select"
+            value={selected}
+            onChange={(e) => setSelected(e.target.value)}
+            aria-label="Number to call"
+          >
+            {CONTACTS.map((c) => (
+              <option key={c.number} value={c.number}>
+                {c.label} — {formatNumber(c.number)}
+              </option>
+            ))}
+          </select>
+
+          <div className="actions">
             <button
               className="btn btn-call"
               onClick={startCall}
-              disabled={phase !== "ready" || !number.trim()}
+              disabled={phase !== "ready" || !selected}
             >
               Call
             </button>
-          </>
-        )}
-      </div>
+          </div>
+        </>
+      )}
 
       <p className="hint">
-        Allow microphone access when prompted. Outbound caller ID is your
-        configured Twilio number. Enter destinations in E.164 format (e.g.
-        +14155551234).
+        Allow microphone access when prompted. Calls place with your Twilio
+        number as the caller ID.
       </p>
     </div>
   );
