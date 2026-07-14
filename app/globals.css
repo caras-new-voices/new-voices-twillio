@@ -1,0 +1,188 @@
+:root {
+  --bg: #0f172a;
+  --panel: #1e293b;
+  --panel-2: #334155;
+  --text: #f1f5f9;
+  --muted: #94a3b8;
+  --accent: #38bdf8;
+  --green: #22c55e;
+  --red: #ef4444;
+  --border: #334155;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+}
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.dialer {
+  width: 100%;
+  max-width: 360px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.dialer h1 {
+  font-size: 18px;
+  margin: 0 0 4px;
+  text-align: center;
+}
+
+.status {
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 16px;
+  min-height: 18px;
+}
+
+.status .dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  background: var(--muted);
+  vertical-align: middle;
+}
+
+.status.ready .dot {
+  background: var(--green);
+}
+
+.status.busy .dot {
+  background: var(--accent);
+}
+
+.status.error .dot {
+  background: var(--red);
+}
+
+.display {
+  width: 100%;
+  font-size: 24px;
+  text-align: center;
+  padding: 14px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  margin-bottom: 16px;
+  letter-spacing: 1px;
+}
+
+.display:focus {
+  outline: 2px solid var(--accent);
+  border-color: transparent;
+}
+
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.key {
+  aspect-ratio: 1.4 / 1;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--text);
+  font-size: 22px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.05s ease, background 0.15s ease;
+}
+
+.key:hover {
+  background: #475569;
+}
+
+.key:active {
+  transform: scale(0.96);
+}
+
+.key small {
+  display: block;
+  font-size: 9px;
+  color: var(--muted);
+  font-weight: 500;
+  letter-spacing: 1px;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+}
+
+.btn {
+  flex: 1;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  color: white;
+  transition: opacity 0.15s ease;
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-call {
+  background: var(--green);
+}
+
+.btn-hangup {
+  background: var(--red);
+}
+
+.btn-secondary {
+  background: var(--panel-2);
+}
+
+.incoming {
+  background: var(--bg);
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.incoming p {
+  margin: 0 0 12px;
+  font-size: 14px;
+}
+
+.hint {
+  margin-top: 16px;
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.5;
+}
