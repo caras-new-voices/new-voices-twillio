@@ -11,11 +11,29 @@ public URL you can open from any browser — and it's protected by a password.
 
 ## Features
 
-- 📞 Outbound calls to any phone number (uses your Twilio number as caller ID)
+- 📞 Outbound calls from a dropdown of saved numbers (uses your Twilio number as caller ID)
 - 📲 Inbound calls ring in the browser
 - 🔢 On-screen keypad with DTMF tones during a call
 - 🔒 Password gate on the whole site (default password: `caras`)
+- 🔑 **Bring-your-own-credentials**: users paste their Twilio keys into the
+  app; they're stored **only in the browser** (localStorage) and the access
+  token is signed **client-side** — nothing Twilio-related is ever stored on
+  the server
 - ▲ One-click deploy to Vercel
+
+## Credential model
+
+The server never sees your Twilio API Key Secret. On first visit (after the
+password) the app shows a short form; you paste:
+
+- Account SID (`AC…`)
+- API Key SID (`SK…`) + Secret
+- TwiML App SID (`AP…`), whose Voice URL points at this site's `/api/voice`
+- Caller ID (your Twilio number, E.164)
+
+These are saved in `localStorage` and used to mint a Twilio access token
+locally via the Web Crypto API. Use the ⚙ button to change them or **Forget
+credentials** to wipe them from the browser.
 
 ---
 
@@ -24,10 +42,12 @@ public URL you can open from any browser — and it's protected by a password.
 | Piece | Role |
 |-------|------|
 | `app/page.tsx` + `components/Dialer.tsx` | The dialer UI (WebRTC via the Voice SDK) |
-| `app/api/token/route.ts` | Mints short-lived Twilio access tokens for the browser |
+| `components/Settings.tsx` | Form to paste Twilio credentials (browser-only) |
+| `lib/twilioToken.ts` | Signs the Twilio access token **client-side** (Web Crypto) |
+| `lib/credentials.ts` | Loads/saves credentials in `localStorage` |
 | `app/api/voice/route.ts` | TwiML webhook Twilio hits for **both** outbound and inbound calls |
 | `app/login` + `app/api/login` + `middleware.ts` | Password gate |
-| `scripts/setup-twilio.mjs` | One-time provisioning of the Twilio API Key + TwiML App |
+| `scripts/setup-twilio.mjs` | Optional one-time provisioning of the API Key + TwiML App |
 
 > **Note:** `/api/voice` is intentionally **public** — Twilio's servers call it
 > and can't send your login cookie. It's protected instead by optional Twilio
@@ -43,82 +63,68 @@ public URL you can open from any browser — and it's protected by a password.
 npm install
 ```
 
-### 2. Deploy to Vercel (get your URL first)
+### 2. Deploy to Vercel
 
 Push this repo to GitHub and import it at <https://vercel.com/new>, **or** use the
 CLI:
 
 ```bash
 npm i -g vercel
-vercel        # first deploy — note the URL it prints, e.g. https://your-app.vercel.app
+vercel --prod   # note the URL it prints, e.g. https://your-app.vercel.app
 ```
 
-You need the deployed URL before the next step, because Twilio's webhooks must
-point at it. (A first deploy will boot without Twilio env vars — that's fine,
-you'll add them in step 4.)
+The only server-side variable is `SITE_PASSWORD` (defaults to `caras` if unset).
+No Twilio secrets are configured on the server.
 
-### 3. Provision the Twilio resources
+### 3. Create the Twilio resources (once, in the Console)
 
-This creates the API Key + TwiML App the dialer needs and points your phone
-number's Voice webhook at your deployment. Put your Account SID and Auth Token
-in `.env.local` (copy from `.env.example`) or pass them inline:
+In the [Twilio Console](https://console.twilio.com):
 
-```bash
-TWILIO_ACCOUNT_SID=AC... TWILIO_AUTH_TOKEN=... \
-  npm run setup:twilio -- https://your-app.vercel.app
-```
+1. **API Key** — Account → *API keys & tokens* → Create API key (Standard).
+   Copy the **SID (`SK…`)** and **Secret** (shown once).
+2. **TwiML App** — Voice → Manage → *TwiML Apps* → Create. Set its
+   **Voice Request URL** to `https://your-app.vercel.app/api/voice` (HTTP POST).
+   Copy the **App SID (`AP…`)**.
+3. *(inbound only)* On your phone number, set the "A call comes in" webhook to
+   the same `/api/voice` URL (HTTP POST).
 
-It prints a block of environment variables — **copy them now** (the API Key
-secret is shown only once).
+> Prefer automation? On a machine that can reach `api.twilio.com`, run
+> `npm run setup:twilio -- https://your-app.vercel.app` to create these for you.
 
-### 4. Add environment variables to Vercel
+### 4. Open the dialer and paste your credentials
 
-In **Vercel → Project → Settings → Environment Variables**, add everything the
-script printed:
-
-| Variable | Description |
-|----------|-------------|
-| `TWILIO_ACCOUNT_SID` | Your account SID (`AC…`) |
-| `TWILIO_API_KEY_SID` | API Key SID from the setup script |
-| `TWILIO_API_KEY_SECRET` | API Key secret from the setup script |
-| `TWILIO_TWIML_APP_SID` | TwiML App SID from the setup script |
-| `TWILIO_CALLER_ID` | Outbound caller ID, E.164 (this project: `+19729475590`) |
-| `TWILIO_CLIENT_IDENTITY` | Any string, e.g. `new_voices_dialer` |
-| `SITE_PASSWORD` | Site password (optional; defaults to `caras`) |
-| `TWILIO_AUTH_TOKEN` | Only needed if you enable signature validation |
-| `TWILIO_VALIDATE_SIGNATURE` | Set to `true` to verify inbound Twilio requests |
-
-Then **redeploy** so the new env vars take effect (`vercel --prod`).
-
-### 5. Open the dialer
-
-Visit your Vercel URL, enter the password (`caras`), allow microphone access,
-and dial. Enter destinations in E.164 (e.g. `+14155551234`); bare US 10-digit
-numbers are auto-prefixed with `+1`.
+Visit your Vercel URL, enter the password (`caras`), then paste the Account SID,
+API Key SID + Secret, TwiML App SID, and your caller ID into the form. They're
+saved in your browser only. Allow microphone access and dial.
 
 ---
 
 ## Local development
 
 ```bash
-cp .env.example .env.local   # fill in the values from the setup script
+cp .env.example .env.local   # optional; only SITE_PASSWORD matters
 npm run dev                  # http://localhost:3000
 ```
 
-For inbound calls to reach a local server, expose it with a tunnel (e.g.
-`ngrok http 3000`) and re-run `npm run setup:twilio -- https://<tunnel-url>`.
+Paste your Twilio credentials into the app as usual. For inbound calls to reach
+a local server, expose it with a tunnel (e.g. `ngrok http 3000`) and point your
+TwiML App / number Voice URL at `https://<tunnel-url>/api/voice`.
 
 ---
 
 ## Security notes
 
-- Secrets live only in environment variables — **never** commit `.env.local`
-  (it's git-ignored).
+- **The API Key Secret never touches the server.** Credentials are pasted in
+  the browser, kept in `localStorage`, and used to sign the access token
+  locally. Use **Forget credentials** to wipe them; anyone on a shared device
+  should do so.
 - The whole site is behind a password (`SITE_PASSWORD`, default `caras`).
-- `TWILIO_AUTH_TOKEN` grants full account access. If it has ever been shared in
+  This is a single shared password, not per-user accounts.
+- A Twilio **Auth Token** grants full account access. If one has been shared in
   plaintext, rotate it in **Twilio Console → Account → API keys & tokens**.
-- Enable `TWILIO_VALIDATE_SIGNATURE=true` (with `TWILIO_AUTH_TOKEN` set) in
-  production so only genuine Twilio requests can drive `/api/voice`.
+  (This app uses an API Key, not the Auth Token.)
+- Optionally enable `TWILIO_VALIDATE_SIGNATURE=true` (with `TWILIO_AUTH_TOKEN`
+  set) so only genuine Twilio requests can drive `/api/voice`.
 
 ---
 

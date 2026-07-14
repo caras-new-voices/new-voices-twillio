@@ -21,7 +21,10 @@ export async function POST(request: Request) {
   const from = (form.get("From") as string) || "";
   const to = (form.get("To") as string) || "";
 
-  const callerId = process.env.TWILIO_CALLER_ID || "";
+  // Caller ID is supplied by the browser (client-side credentials); fall back
+  // to a server env var if one is configured.
+  const callerId =
+    (form.get("callerId") as string) || process.env.TWILIO_CALLER_ID || "";
   const identity = process.env.TWILIO_CLIENT_IDENTITY || "new_voices_dialer";
 
   // Optional request-authenticity check. Enable by setting

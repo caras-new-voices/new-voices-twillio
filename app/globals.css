@@ -48,6 +48,81 @@ body {
   text-align: center;
 }
 
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.header-row h1 {
+  flex: 1;
+}
+
+.gear {
+  position: absolute;
+  right: 0;
+  top: 0;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+}
+
+.gear:hover {
+  color: var(--text);
+}
+
+.form-row {
+  margin-bottom: 14px;
+}
+
+.input {
+  width: 100%;
+  padding: 11px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.input:focus {
+  outline: 2px solid var(--accent);
+  border-color: transparent;
+}
+
+.field-hint {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.link-btn {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+  margin-top: 12px;
+}
+
+.link-btn:hover {
+  color: var(--text);
+}
+
+.footer-row {
+  margin-top: 8px;
+}
+
 .status {
   text-align: center;
   font-size: 13px;
