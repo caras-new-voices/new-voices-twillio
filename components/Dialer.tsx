@@ -8,7 +8,6 @@ import { mintAccessToken, type TwilioConfig } from "@/lib/twilioToken";
 
 type Phase =
   | "loading"
-  | "setup"
   | "ready"
   | "connecting"
   | "on-call"
@@ -36,6 +35,10 @@ export default function Dialer() {
   const [selected, setSelected] = useState(CONTACTS[0]?.number ?? "");
   const [incomingFrom, setIncomingFrom] = useState("");
   const [config, setConfig] = useState<TwilioConfig | null>(null);
+  // Whether the credentials form is showing. Kept separate from `phase` so
+  // background device events (connect/error) can't flip us out of the form.
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [ready, setReady] = useState(false); // finished reading localStorage
 
   const deviceRef = useRef<Device | null>(null);
   const callRef = useRef<Call | null>(null);
@@ -49,8 +52,9 @@ export default function Dialer() {
       configRef.current = saved;
       setConfig(saved);
     } else {
-      setPhase("setup");
+      setSettingsOpen(true);
     }
+    setReady(true);
   }, []);
 
   const resetToReady = useCallback(() => {
@@ -177,32 +181,31 @@ export default function Dialer() {
   }, [resetToReady]);
 
   const handleSave = useCallback((cfg: TwilioConfig) => {
-    saveConfig(cfg);
+    saveConfig(cfg); // persist to this browser's localStorage
     configRef.current = cfg;
-    setConfig(cfg); // triggers device (re)init
+    setPhase("loading");
+    setConfig(cfg); // new object → effect tears down old device and reconnects
+    setSettingsOpen(false);
   }, []);
 
-  const openSettings = useCallback(() => {
-    deviceRef.current?.destroy();
-    deviceRef.current = null;
-    setPhase("setup");
-  }, []);
+  // Open the credentials form. The live Device keeps running in the
+  // background so "Cancel" can return instantly without reconnecting.
+  const openSettings = useCallback(() => setSettingsOpen(true), []);
+  const returnToDialer = useCallback(() => setSettingsOpen(false), []);
 
   const forgetCredentials = useCallback(() => {
-    deviceRef.current?.destroy();
-    deviceRef.current = null;
     clearConfig();
     configRef.current = null;
-    setConfig(null);
-    setPhase("setup");
+    setConfig(null); // effect cleanup destroys the live device
+    setSettingsOpen(true);
   }, []);
 
-  if (phase === "setup") {
+  if (settingsOpen || (ready && !config)) {
     return (
       <Settings
         initial={configRef.current}
         onSave={handleSave}
-        onCancel={configRef.current ? () => setConfig(configRef.current) : undefined}
+        onCancel={configRef.current ? returnToDialer : undefined}
       />
     );
   }

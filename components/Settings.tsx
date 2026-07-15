@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { TwilioConfig } from "@/lib/twilioToken";
 import { DEFAULTS, isComplete } from "@/lib/credentials";
 
 type Props = {
-  initial: Partial<TwilioConfig> | null;
+  initial: TwilioConfig | null;
   onSave: (config: TwilioConfig) => void;
   onCancel?: () => void;
 };
@@ -48,45 +48,81 @@ const FIELDS: {
   },
 ];
 
+const ALL_KEYS: (keyof TwilioConfig)[] = [
+  "accountSid",
+  "apiKeySid",
+  "apiKeySecret",
+  "twimlAppSid",
+  "callerId",
+  "identity",
+];
+
+function normalize(values: Partial<TwilioConfig>): TwilioConfig {
+  return {
+    accountSid: (values.accountSid || "").trim(),
+    apiKeySid: (values.apiKeySid || "").trim(),
+    apiKeySecret: (values.apiKeySecret || "").trim(),
+    twimlAppSid: (values.twimlAppSid || "").trim(),
+    callerId: (values.callerId || "").trim(),
+    identity: (values.identity || DEFAULTS.identity).trim(),
+  };
+}
+
 export default function Settings({ initial, onSave, onCancel }: Props) {
-  const [values, setValues] = useState<Partial<TwilioConfig>>({
-    identity: DEFAULTS.identity,
-    ...(initial || {}),
-  });
+  const hasSaved = Boolean(initial && isComplete(initial));
+
+  const [values, setValues] = useState<Partial<TwilioConfig>>(
+    initial ? { ...initial } : { identity: DEFAULTS.identity },
+  );
   const [error, setError] = useState("");
 
-  const set = (key: keyof TwilioConfig, v: string) =>
+  const set = (key: keyof TwilioConfig, v: string) => {
+    setError("");
     setValues((prev) => ({ ...prev, [key]: v }));
+  };
 
-  const submit = (e: React.FormEvent) => {
+  // Does the form differ from the last saved copy?
+  const isDirty = useMemo(() => {
+    if (!initial) return true;
+    const current = normalize(values);
+    return ALL_KEYS.some((k) => current[k] !== initial[k]);
+  }, [values, initial]);
+
+  const complete = isComplete(normalize(values));
+
+  const commit = (e: React.FormEvent) => {
     e.preventDefault();
-    const trimmed: Partial<TwilioConfig> = {};
-    (Object.keys(values) as (keyof TwilioConfig)[]).forEach((k) => {
-      const v = values[k];
-      if (typeof v === "string") trimmed[k] = v.trim();
-    });
-    if (!isComplete(trimmed)) {
+    const cfg = normalize(values);
+    if (!isComplete(cfg)) {
       setError("Please fill in all fields.");
       return;
     }
-    if (!/^\+\d{6,15}$/.test(trimmed.callerId!)) {
+    if (!/^\+\d{6,15}$/.test(cfg.callerId)) {
       setError("Caller ID must be E.164, e.g. +19729475590");
       return;
     }
-    onSave({
-      accountSid: trimmed.accountSid!,
-      apiKeySid: trimmed.apiKeySid!,
-      apiKeySecret: trimmed.apiKeySecret!,
-      twimlAppSid: trimmed.twimlAppSid!,
-      callerId: trimmed.callerId!,
-      identity: trimmed.identity || DEFAULTS.identity,
-    });
+    onSave(cfg); // persists to localStorage in the parent, then connects
   };
 
+  const restore = () => {
+    setError("");
+    if (initial) setValues({ ...initial });
+  };
+
+  const statusLabel = !hasSaved
+    ? "Not yet saved on this device"
+    : isDirty
+      ? "Unsaved changes"
+      : "Saved on this device";
+  const statusClass = !hasSaved ? "" : isDirty ? "busy" : "ready";
+
   return (
-    <form className="dialer" onSubmit={submit}>
+    <form className="dialer" onSubmit={commit}>
       <h1>Twilio credentials</h1>
-      <div className="status">Stored only in this browser</div>
+      <div className={`status ${statusClass}`}>
+        <span className="dot" />
+        {statusLabel}
+      </div>
 
       {FIELDS.map((f) => (
         <div className="form-row" key={f.key}>
@@ -115,20 +151,45 @@ export default function Settings({ initial, onSave, onCancel }: Props) {
       )}
 
       <div className="actions">
-        {onCancel && (
+        {/* Secondary action */}
+        {hasSaved && isDirty && (
+          <button type="button" className="btn btn-secondary" onClick={restore}>
+            Restore to saved
+          </button>
+        )}
+        {hasSaved && !isDirty && onCancel && (
           <button type="button" className="btn btn-secondary" onClick={onCancel}>
             Cancel
           </button>
         )}
-        <button type="submit" className="btn btn-call">
-          Save &amp; connect
-        </button>
+
+        {/* Primary action */}
+        {!hasSaved && (
+          <button type="submit" className="btn btn-call" disabled={!complete}>
+            Save &amp; connect
+          </button>
+        )}
+        {hasSaved && isDirty && (
+          <button type="submit" className="btn btn-call" disabled={!complete}>
+            Update
+          </button>
+        )}
+        {hasSaved && !isDirty && (
+          <button
+            type="button"
+            className="btn btn-call"
+            onClick={() => (onCancel ? onCancel() : onSave(normalize(values)))}
+          >
+            Connect
+          </button>
+        )}
       </div>
 
       <p className="hint">
-        These credentials are kept only in this browser (localStorage) and are
-        used to sign your Twilio access token locally. They are never sent to or
-        stored on this website&apos;s server.
+        Saved with <strong>Save</strong> / <strong>Update</strong> to this
+        browser only (localStorage) and auto-filled next time you open the site.
+        The API Key Secret is used to sign your access token locally and is
+        never sent to this website&apos;s server.
       </p>
     </form>
   );
