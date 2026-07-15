@@ -16,9 +16,37 @@ const mono = JetBrains_Mono({
   display: "swap",
 });
 
+const SITE_URL = "https://new-voices-twillio.vercel.app";
+const TITLE = "NewVoices Dialer";
+const DESCRIPTION = "Make and receive calls right in your browser.";
+
 export const metadata: Metadata = {
-  title: "NewVoices Dialer",
-  description: "Browser-based Twilio dialer — make and receive calls",
+  metadataBase: new URL(SITE_URL),
+  title: TITLE,
+  description: DESCRIPTION,
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: SITE_URL,
+    siteName: "NewVoices AI",
+    type: "website",
+    images: [
+      { url: "/og-image.png", width: 1200, height: 630, alt: "NewVoices Dialer" },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+    images: ["/og-image.png"],
+  },
 };
 
 export default function RootLayout({
