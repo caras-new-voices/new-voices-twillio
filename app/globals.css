@@ -1,13 +1,26 @@
 :root {
-  --bg: #0f172a;
-  --panel: #1e293b;
-  --panel-2: #334155;
-  --text: #f1f5f9;
-  --muted: #94a3b8;
-  --accent: #38bdf8;
-  --green: #22c55e;
-  --red: #ef4444;
-  --border: #334155;
+  /* NewVoices AI brand palette */
+  --ink: #16181a;
+  --dark-card: #0c0d0f;
+  --white: #ffffff;
+  --slate: #6b7280;
+  --steel: #aeb4b9;
+  --mist: #e6e9ea;
+  --cloud: #f4f6f6;
+  --mint: #57bf94;
+  --sky: #159cbd;
+  --amber: #f9b233;
+
+  /* Semantic tokens */
+  --bg: var(--dark-card);
+  --panel: var(--ink);
+  --panel-2: #202325;
+  --text: var(--white);
+  --muted: var(--steel);
+  --accent: var(--sky);
+  --green: var(--mint);
+  --red: #e5484d;
+  --border: #2a2e31;
 }
 
 * {
@@ -20,8 +33,8 @@ body {
   padding: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-    Helvetica, Arial, sans-serif;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 .page {
@@ -46,6 +59,24 @@ body {
   font-size: 18px;
   margin: 0 0 4px;
   text-align: center;
+}
+
+.brand-logo {
+  display: block;
+  width: 70%;
+  max-width: 200px;
+  height: auto;
+  margin: 4px auto 2px;
+}
+
+.brand-sub {
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 6px;
+  font-family: var(--font-mono), ui-monospace, monospace;
 }
 
 .header-row {
@@ -87,8 +118,8 @@ body {
   border: 1px solid var(--border);
   background: var(--bg);
   color: var(--text);
-  font-size: 15px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 14px;
+  font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 .input:focus {

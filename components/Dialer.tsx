@@ -225,7 +225,12 @@ export default function Dialer() {
   return (
     <div className="dialer">
       <div className="header-row">
-        <h1>New Voices Dialer</h1>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          className="brand-logo"
+          src="/brand/newvoices-logo-white.png"
+          alt="NewVoices AI"
+        />
         <button
           className="gear"
           onClick={openSettings}
@@ -235,6 +240,7 @@ export default function Dialer() {
           ⚙
         </button>
       </div>
+      <p className="brand-sub">Dialer</p>
       <div className={`status ${statusClass}`}>
         <span className="dot" />
         {statusText}

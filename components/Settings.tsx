@@ -118,7 +118,13 @@ export default function Settings({ initial, onSave, onCancel }: Props) {
 
   return (
     <form className="dialer" onSubmit={commit}>
-      <h1>Twilio credentials</h1>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        className="brand-logo"
+        src="/brand/newvoices-logo-white.png"
+        alt="NewVoices AI"
+      />
+      <p className="brand-sub">Dialer · Setup</p>
       <div className={`status ${statusClass}`}>
         <span className="dot" />
         {statusLabel}
